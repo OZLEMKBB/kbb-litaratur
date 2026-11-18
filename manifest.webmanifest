@@ -1,0 +1,16 @@
+{
+  "name": "KBB Literatür Taraması",
+  "short_name": "KBB Literatür",
+  "description": "KBB dergilerinde aylık yayımlanan makaleler (PubMed)",
+  "lang": "tr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f3d4c",
+  "theme_color": "#0f3d4c",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KBB Literatür">
+<meta name="theme-color" content="#0f3d4c">
+<title>KBB Literatür Taraması</title>
+<style>
+:root{--bg:#f4f6f7;--card:#fff;--ink:#16232a;--mut:#5d6b72;--pri:#0f3d4c;--acc:#1f7a8c;--line:#dde3e6;--warn:#b5532a}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1417;--card:#172024;--ink:#e6edf0;--mut:#93a3aa;--pri:#7cc3d3;--acc:#5fb3c6;--line:#26323a}}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{position:sticky;top:0;z-index:5;background:var(--pri);color:#fff;padding:10px 12px calc(10px);padding-top:max(10px,env(safe-area-inset-top))}
+@media (prefers-color-scheme:dark){header{background:#10272f}}
+h1{font-size:17px;margin:0 0 8px;font-weight:650;letter-spacing:.2px}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+input,select,button{font:inherit;font-size:16px;border-radius:8px;border:1px solid var(--line);padding:8px 10px;background:var(--card);color:var(--ink)}
+header input,header select{border:0}
+button{cursor:pointer;background:var(--acc);color:#fff;border:0;font-weight:600}
+button.ghost{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+header button.ghost{color:#fff;border-color:rgba(255,255,255,.6)}
+main{padding:10px 12px 80px;max-width:820px;margin:0 auto}
+.bar{height:4px;background:rgba(255,255,255,.25);border-radius:2px;margin-top:8px;overflow:hidden;display:none}
+.bar>i{display:block;height:100%;width:0;background:#9fe3f0;transition:width .3s}
+.status{font-size:13px;color:var(--mut);margin:6px 2px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:6px 0;scrollbar-width:none}
+.chip{white-space:nowrap;padding:5px 10px;border-radius:16px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:13px;font-weight:500}
+.chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.jhead{margin:16px 2px 6px;font-weight:650;color:var(--pri);font-size:14px;display:flex;justify-content:space-between}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}
+.t{font-weight:600;margin:0 0 4px}
+.m{font-size:12.5px;color:var(--mut)}
+.badges{margin-top:4px}
+.b{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;background:rgba(31,122,140,.12);color:var(--acc);margin:2px 4px 0 0;font-weight:600}
+.b.rev{background:rgba(181,83,42,.12);color:var(--warn)}
+.acts{display:flex;gap:12px;margin-top:6px;font-size:13px;align-items:center}
+.acts a,.acts span{color:var(--acc);text-decoration:none;font-weight:600;cursor:pointer}
+.abs{font-size:13.5px;margin-top:8px;border-top:1px dashed var(--line);padding-top:8px;white-space:pre-wrap}
+.abs b{color:var(--pri)}
+.star.on{color:#d39b00}
+.panel{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:10}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:88vh;overflow:auto;background:var(--card);border-radius:16px 16px 0 0;padding:14px 14px max(20px,env(safe-area-inset-bottom))}
+.sheet h3{margin:14px 0 4px;font-size:14px;color:var(--pri)}
+.sheet label{display:flex;gap:8px;align-items:center;padding:5px 0;font-size:14px}
+.sheet input[type=checkbox]{width:18px;height:18px}
+.sticky{position:sticky;top:0;background:var(--card);padding-bottom:8px;display:flex;gap:8px;justify-content:space-between;align-items:center}
+.empty{text-align:center;color:var(--mut);padding:40px 10px}
+.small{font-size:12px;color:var(--mut)}
+.card.reading{border-color:var(--acc);box-shadow:0 0 0 2px rgba(31,122,140,.35)}
+#player{position:fixed;left:0;right:0;bottom:0;z-index:8;display:none;align-items:center;gap:6px;background:var(--pri);color:#fff;padding:10px 12px max(10px,env(safe-area-inset-bottom))}
+@media (prefers-color-scheme:dark){#player{background:#10272f}}
+#pInfo{flex:1;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb{background:rgba(255,255,255,.15);padding:8px 11px;font-size:16px}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;display:none;z-index:20}
+</style>
+</head>
+<body>
+<header>
+  <h1>KBB Literatür Taraması</h1>
+  <div class="row">
+    <input type="month" id="month" style="flex:1;min-width:140px">
+    <select id="dtype" title="Tarih ölçütü">
+      <option value="dp">Yayın tarihi</option>
+      <option value="edat">PubMed'e giriş</option>
+    </select>
+    <button id="go">Getir</button>
+  </div>
+  <div class="row" style="margin-top:6px">
+    <button class="ghost" id="openJ" style="flex:1">Dergiler (<span id="jn">0</span>)</button>
+    <button class="ghost" id="openS">Ayarlar</button>
+  </div>
+  <div class="bar" id="bar"><i></i></div>
+</header>
+
+<main>
+  <input id="q" type="search" placeholder="Başlık, yazar veya dergi içinde ara…" style="width:100%">
+  <div class="chips" id="gchips"></div>
+  <div class="row small" style="gap:14px">
+    <label><input type="checkbox" id="hideMinor" checked> Mektup/yorum/düzeltmeleri gizle</label>
+    <label><input type="checkbox" id="onlyRev"> Yalnız derleme/meta-analiz</label>
+    <label><input type="checkbox" id="onlyStar"> Yalnız işaretliler</label>
+  </div>
+  <div class="row small" style="margin-top:4px">
+    Sırala:
+    <select id="sort" style="padding:4px 6px">
+      <option value="journal">Dergiye göre</option>
+      <option value="date">Tarihe göre (yeni→eski)</option>
+    </select>
+    <span style="flex:1"></span>
+    <span class="acts"><span id="playAll">🔊 Listeyi oku</span><span id="copyStar">İşaretlileri kopyala</span></span>
+  </div>
+  <div class="status" id="status">Bir ay seçip “Getir”e dokunun.</div>
+  <div id="list"></div>
+</main>
+
+<div class="panel" id="jpanel"><div class="sheet">
+  <div class="sticky"><b>Dergiler</b>
+    <span><button class="ghost" id="jall">Tümü</button> <button class="ghost" id="jnone">Hiçbiri</button> <button id="jclose">Tamam</button></span>
+  </div>
+  <div id="jlist"></div>
+</div></div>
+
+<div class="panel" id="spanel"><div class="sheet">
+  <div class="sticky"><b>Ayarlar</b><button id="sclose">Tamam</button></div>
+  <p class="small">NCBI anahtarsız istekleri saniyede 3 ile sınırlar. Ücretsiz bir NCBI API anahtarı (ncbi.nlm.nih.gov → Account settings → API Key) girerseniz yükleme yaklaşık 3 kat hızlanır.</p>
+  <input id="apikey" placeholder="NCBI API anahtarı (isteğe bağlı)" style="width:100%">
+  <h3>Ek PubMed sorgusu (isteğe bağlı)</h3>
+  <p class="small">Tüm sonuçlara AND ile eklenir. Örnek: <code>olfact* OR smell</code> ya da <code>cochlear implant*</code></p>
+  <input id="extra" placeholder="ör. olfact* OR anosmia" style="width:100%">
+  <h3>Sesli okuma</h3>
+  <label>Liste okunurken: <select id="ttsMode" style="flex:1"><option value="title">Yalnız başlıklar (hızlı tarama)</option><option value="full">Başlık + özet</option></select></label>
+  <label>Hız: <select id="rate" style="flex:1"><option value="0.8">0.8×</option><option value="0.9">0.9×</option><option value="1">1×</option><option value="1.15">1.15×</option><option value="1.3">1.3×</option><option value="1.5">1.5×</option></select></label>
+  <label>İngilizce ses: <select id="voice" style="flex:1"></select></label>
+  <p class="small">Dergi ve yazar adı Türkçe, başlık ve özet İngilizce sesle okunur. Tek makaledeki “Dinle” her zaman özeti de okur. Sesler telefonun metin-konuşma motorundan gelir (Ayarlar → Erişilebilirlik → Metin okuma çıkışı).</p>
+  <h3>Önbellek</h3>
+  <button class="ghost" id="clearCache">Önbelleği temizle</button>
+</div></div>
+
+<div id="player">
+  <div id="pInfo"></div>
+  <button class="pb" id="pPrev">⏮</button><button class="pb" id="pPause">⏸</button><button class="pb" id="pNext">⏭</button><button class="pb" id="pStop">⏹</button>
+</div>
+<div id="toast"></div>
+
+<script>
+const EU = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/";
+const TOOL = "kbb_literatur_app";
+const JOURNALS = {
+  "Genel KBB": [
+    ["Laryngoscope","The Laryngoscope"],
+    ["Otolaryngol Head Neck Surg","Otolaryngology–Head and Neck Surgery"],
+    ["JAMA Otolaryngol Head Neck Surg","JAMA Otolaryngology–HNS"],
+    ["Eur Arch Otorhinolaryngol","Eur Arch Oto-Rhino-Laryngol"],
+    ["Clin Otolaryngol","Clinical Otolaryngology"],
+    ["J Laryngol Otol","J Laryngology & Otology"],
+    ["Acta Otolaryngol","Acta Oto-Laryngologica"],
+    ["Ann Otol Rhinol Laryngol","Ann Otol Rhinol Laryngol"],
+    ["Am J Otolaryngol","Am J Otolaryngology"],
+    ["Auris Nasus Larynx","Auris Nasus Larynx"],
+    ["Laryngoscope Investig Otolaryngol","Laryngoscope Investigative Oto"],
+    ["OTO Open","OTO Open"],
+    ["J Otolaryngol Head Neck Surg","J Otolaryngol HNS"],
+    ["Eur Ann Otorhinolaryngol Head Neck Dis","Eur Ann ORL HN Dis"],
+    ["Ear Nose Throat J","Ear, Nose & Throat Journal"],
+    ["Braz J Otorhinolaryngol","Braz J Otorhinolaryngol"],
+    ["Acta Otorhinolaryngol Ital","Acta Otorhinolaryngol Ital"],
+    ["HNO","HNO"],
+    ["B-ENT","B-ENT"],
+    ["World J Otorhinolaryngol Head Neck Surg","World J ORL-HNS"],
+    ["Otolaryngol Clin North Am","Otolaryngol Clin North Am"],
+    ["Curr Opin Otolaryngol Head Neck Surg","Curr Opin ORL-HNS"]
+  ],
+  "Otoloji · Nörotoloji · İşitme": [
+    ["Otol Neurotol","Otology & Neurotology"],
+    ["Ear Hear","Ear and Hearing"],
+    ["Audiol Neurootol","Audiology & Neuro-Otology"],
+    ["Hear Res","Hearing Research"],
+    ["J Assoc Res Otolaryngol","JARO"],
+    ["Trends Hear","Trends in Hearing"],
+    ["Int J Audiol","Int J Audiology"],
+    ["J Vestib Res","J Vestibular Research"]
+  ],
+  "Rinoloji · Olfaksiyon": [
+    ["Rhinology","Rhinology"],
+    ["Int Forum Allergy Rhinol","IFAR"],
+    ["Am J Rhinol Allergy","Am J Rhinology & Allergy"],
+    ["Chem Senses","Chemical Senses"]
+  ],
+  "Baş-Boyun Onkolojisi": [
+    ["Head Neck","Head & Neck"],
+    ["Oral Oncol","Oral Oncology"],
+    ["Head Neck Pathol","Head & Neck Pathology"]
+  ],
+  "Larengoloji · Ses · Yutma": [
+    ["J Voice","Journal of Voice"],
+    ["Dysphagia","Dysphagia"]
+  ],
+  "Pediatrik KBB": [
+    ["Int J Pediatr Otorhinolaryngol","Int J Pediatr ORL"]
+  ],
+  "Fasiyal Plastik": [
+    ["Facial Plast Surg Aesthet Med","Facial Plast Surg Aesthet Med"],
+    ["Facial Plast Surg","Facial Plastic Surgery"]
+  ],
+  "Uyku": [
+    ["Sleep Breath","Sleep and Breathing"]
+  ],
+  "Türk Dergileri": [
+    ["Turk Arch Otorhinolaryngol","Turk Arch Otorhinolaryngol"],
+    ["Kulak Burun Bogaz Ihtis Derg","KBB İhtisas Dergisi"]
+  ]
+};
+const TA2GROUP = {}, TA2NAME = {};
+for (const [g, arr] of Object.entries(JOURNALS)) for (const [ta, n] of arr) { TA2GROUP[ta.toLowerCase()] = g; TA2NAME[ta.toLowerCase()] = n; }
+const MINOR = ["Comment","Letter","Erratum","Published Erratum","Editorial","Retraction of Publication","Retracted Publication","News","Expression of Concern"];
+const REV = ["Review","Systematic Review","Meta-Analysis"];
+const KEYPT = {"Randomized Controlled Trial":"RKÇ","Meta-Analysis":"Meta-analiz","Systematic Review":"Sistematik derleme","Review":"Derleme","Clinical Trial":"Klinik çalışma","Case Reports":"Olgu","Multicenter Study":"Çok merkezli","Guideline":"Kılavuz","Practice Guideline":"Kılavuz"};
+
+const $ = s => document.querySelector(s);
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } }
+};
+let selected = new Set(store.get("kbb_sel", Object.values(JOURNALS).flat().map(x => x[0])));
+let stars = store.get("kbb_stars", {});
+let items = [];
+let activeGroup = null;
+const absCache = {};
+
+function toast(m){ const t=$("#toast"); t.textContent=m; t.style.display="block"; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display="none",2200); }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function esc(s){ return String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function keyParam(){ const k = $("#apikey").value.trim(); return k ? "&api_key=" + encodeURIComponent(k) : ""; }
+function delay(){ return $("#apikey").value.trim() ? 120 : 380; }
+
+async function eu(path, retries=3){
+  for (let i=0;i<=retries;i++){
+    try {
+      const r = await fetch(EU + path + "&tool=" + TOOL + keyParam());
+      if (r.status === 429) { await sleep(1200*(i+1)); continue; }
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r;
+    } catch(e){ if (i===retries) throw e; await sleep(800*(i+1)); }
+  }
+}
+
+// --- default month: previous month
+(function(){
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-1);
+  $("#month").value = store.get("kbb_month", d.toISOString().slice(0,7));
+  $("#dtype").value = store.get("kbb_dtype", "dp");
+  $("#apikey").value = store.get("kbb_key", "");
+  $("#extra").value = store.get("kbb_extra", "");
+  $("#sort").value = store.get("kbb_sort", "journal");
+})();
+
+function buildJournalPanel(){
+  let h = "";
+  for (const [g, arr] of Object.entries(JOURNALS)){
+    h += `<h3><label><input type="checkbox" data-group="${esc(g)}"> ${esc(g)}</label></h3>`;
+    for (const [ta, n] of arr) h += `<label style="padding-left:24px"><input type="checkbox" data-ta="${esc(ta)}" ${selected.has(ta)?"checked":""}> ${esc(n)}</label>`;
+  }
+  $("#jlist").innerHTML = h;
+  syncGroupBoxes();
+}
+function syncGroupBoxes(){
+  for (const [g, arr] of Object.entries(JOURNALS)){
+    const box = document.querySelector(`input[data-group="${CSS.escape(g)}"]`);
+    const n = arr.filter(x => selected.has(x[0])).length;
+    box.checked = n === arr.length; box.indeterminate = n>0 && n<arr.length;
+  }
+  $("#jn").textContent = selected.size;
+  store.set("kbb_sel", [...selected]);
+}
+$("#jlist").addEventListener("change", e => {
+  const t = e.target;
+  if (t.dataset.ta){ t.checked ? selected.add(t.dataset.ta) : selected.delete(t.dataset.ta); }
+  if (t.dataset.group){ for (const [ta] of JOURNALS[t.dataset.group]) t.checked ? selected.add(ta) : selected.delete(ta); buildJournalPanel(); return; }
+  syncGroupBoxes();
+});
+$("#jall").onclick = () => { Object.values(JOURNALS).flat().forEach(x=>selected.add(x[0])); buildJournalPanel(); };
+$("#jnone").onclick = () => { selected.clear(); buildJournalPanel(); };
+$("#openJ").onclick = () => $("#jpanel").style.display = "block";
+$("#jclose").onclick = () => $("#jpanel").style.display = "none";
+$("#openS").onclick = () => $("#spanel").style.display = "block";
+$("#sclose").onclick = () => { $("#spanel").style.display = "none"; store.set("kbb_key", $("#apikey").value.trim()); store.set("kbb_extra", $("#extra").value.trim()); };
+for (const p of ["#jpanel","#spanel"]) $(p).addEventListener("click", e => { if (e.target === $(p)) $(p).style.display = "none"; });
+$("#clearCache").onclick = () => { try { Object.keys(localStorage).filter(k=>k.startsWith("kbb_c_")).forEach(k=>localStorage.removeItem(k)); } catch(e){} toast("Önbellek temizlendi"); };
+
+function monthRange(ym){
+  const [y,m] = ym.split("-").map(Number);
+  const last = new Date(y, m, 0).getDate();
+  return [`${y}/${String(m).padStart(2,"0")}/01`, `${y}/${String(m).padStart(2,"0")}/${last}`];
+}
+
+async function run(){
+  const ym = $("#month").value; if (!ym) return toast("Ay seçin");
+  if (!selected.size) return toast("En az bir dergi seçin");
+  const dt = $("#dtype").value, extra = $("#extra").value.trim();
+  store.set("kbb_month", ym); store.set("kbb_dtype", dt);
+  const [a,b] = monthRange(ym);
+  const jq = [...selected].map(t => `"${t}"[ta]`).join(" OR ");
+  let term = `(${jq}) AND ("${a}"[${dt}] : "${b}"[${dt}])`;
+  if (extra) term += ` AND (${extra})`;
+  const ckey = "kbb_c_" + btoa(unescape(encodeURIComponent(term))).slice(0,120);
+  const cached = store.get(ckey, null);
+  if (cached && Date.now() - cached.t < 12*3600e3){ items = cached.items; render(); setStatus(`${items.length} kayıt (önbellekten, ${new Date(cached.t).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})})`); return; }
+
+  const bar = $("#bar"), fill = bar.firstElementChild; bar.style.display="block"; fill.style.width="3%";
+  $("#go").disabled = true; items = []; $("#list").innerHTML = "";
+  try {
+    setStatus("PubMed'de aranıyor…");
+    const r = await eu(`esearch.fcgi?db=pubmed&retmode=json&usehistory=y&retmax=0&term=${encodeURIComponent(term)}`);
+    const j = await r.json();
+    const count = +j.esearchresult.count, we = j.esearchresult.webenv, qk = j.esearchresult.querykey;
+    if (!count){ setStatus("Bu ay için kayıt bulunamadı. (Basılı sayılar için “Yayın tarihi”, erken çevrimiçi makaleler için “PubMed'e giriş” deneyin.)"); return; }
+    const step = 200;
+    for (let s=0; s<count; s+=step){
+      setStatus(`Kayıtlar alınıyor: ${Math.min(s+step,count)} / ${count}`);
+      const rr = await eu(`esummary.fcgi?db=pubmed&retmode=json&version=2.0&query_key=${qk}&WebEnv=${encodeURIComponent(we)}&retstart=${s}&retmax=${step}`);
+      const jj = await rr.json(), res = jj.result || {};
+      for (const id of (res.uids||[])) items.push(slim(res[id]));
+      fill.style.width = Math.round(100*Math.min(s+step,count)/count) + "%";
+      if (s === 0 || (s/step)%3===0) render();
+      await sleep(delay());
+    }
+    render();
+    if (!store.set(ckey, {t: Date.now(), items})) { /* storage full: ignore */ }
+    setStatus(`${items.length} kayıt · ${ym} · ${dt==="dp"?"yayın tarihi":"PubMed giriş tarihi"}`);
+  } catch(e){
+    setStatus("Bağlantı hatası: " + e.message + ". İnternet bağlantısını kontrol edip yeniden deneyin.");
+    render();
+  } finally { $("#go").disabled = false; setTimeout(()=>bar.style.display="none", 600); }
+}
+
+function slim(d){
+  const doi = (d.articleids||[]).find(x=>x.idtype==="doi");
+  const ta = (d.source||"");
+  const au = (d.authors||[]).map(a=>a.name);
+  return {
+    id: d.uid, t: d.title, ta, jn: d.fulljournalname, dp: d.pubdate, ep: d.epubdate, sd: d.sortpubdate,
+    au: au.length > 4 ? au.slice(0,3).join(", ") + " … " + au[au.length-1] : au.join(", "),
+    a1: au[0] || "", n: au.length,
+    pt: d.pubtype || [], doi: doi ? doi.value : "", v: d.volume, i: d.issue, pg: d.pages || d.elocationid || ""
+  };
+}
+
+function setStatus(m){ $("#status").textContent = m; }
+
+function groupOf(it){ return TA2GROUP[(it.ta||"").toLowerCase()] || "Diğer"; }
+
+function filtered(){
+  const q = $("#q").value.trim().toLocaleLowerCase("tr");
+  const hide = $("#hideMinor").checked, rev = $("#onlyRev").checked, st = $("#onlyStar").checked;
+  return items.filter(it => {
+    if (hide && it.pt.some(p => MINOR.includes(p))) return false;
+    if (rev && !it.pt.some(p => REV.includes(p))) return false;
+    if (st && !stars[it.id]) return false;
+    if (activeGroup && groupOf(it) !== activeGroup) return false;
+    if (q && !(it.t+" "+it.au+" "+it.ta+" "+it.jn).toLocaleLowerCase("tr").includes(q)) return false;
+    return true;
+  });
+}
+
+function renderChips(){
+  const counts = {};
+  for (const it of items) counts[groupOf(it)] = (counts[groupOf(it)]||0)+1;
+  let h = `<button class="chip ${!activeGroup?"on":""}" data-g="">Tümü ${items.length?`(${items.length})`:""}</button>`;
+  for (const g of Object.keys(JOURNALS)) if (counts[g]) h += `<button class="chip ${activeGroup===g?"on":""}" data-g="${esc(g)}">${esc(g)} (${counts[g]})</button>`;
+  $("#gchips").innerHTML = h;
+}
+$("#gchips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; activeGroup = b.dataset.g || null; render(); });
+
+function card(it){
+  const badges = it.pt.filter(p=>KEYPT[p]).map(p=>`<span class="b ${REV.includes(p)?"rev":""}">${KEYPT[p]}</span>`).join("");
+  const cite = [it.dp, it.v ? `${it.v}${it.i?`(${it.i})`:""}` : "", it.pg].filter(Boolean).join(" · ");
+  return `<div class="card" data-id="${it.id}">
+    <p class="t">${esc(it.t)}</p>
+    <div class="m">${esc(it.au)}</div>
+    <div class="m"><i>${esc(it.ta)}</i> · ${esc(cite)}${it.ep && !it.v ? " · e-pub " + esc(it.ep) : ""}</div>
+    ${badges ? `<div class="badges">${badges}</div>` : ""}
+    <div class="acts">
+      <span data-act="abs">Özet</span>
+      <span data-act="listen">🔊 Dinle</span>
+      <a href="https://pubmed.ncbi.nlm.nih.gov/${it.id}/" target="_blank" rel="noopener">PubMed</a>
+      ${it.doi ? `<a href="https://doi.org/${esc(it.doi)}" target="_blank" rel="noopener">Tam metin</a>` : ""}
+      <span style="flex:1"></span>
+      <span data-act="star" class="star ${stars[it.id]?"on":""}" style="font-size:18px">${stars[it.id]?"★":"☆"}</span>
+    </div>
+    <div class="abs" style="display:none"></div>
+  </div>`;
+}
+
+let renderLimit = 150;
+function render(){
+  renderChips();
+  let list = filtered();
+  const sort = $("#sort").value; store.set("kbb_sort", sort);
+  if (!items.length){ $("#list").innerHTML = ""; return; }
+  if (!list.length){ $("#list").innerHTML = `<div class="empty">Filtrelere uyan kayıt yok.</div>`; return; }
+  let h = "";
+  if (sort === "date"){
+    list = list.slice().sort((x,y)=> (y.sd||"").localeCompare(x.sd||""));
+    h = list.slice(0, renderLimit).map(card).join("");
+  } else {
+    const by = {};
+    for (const it of list) (by[it.ta] = by[it.ta] || []).push(it);
+    const keys = Object.keys(by).sort((a,b)=>by[b].length-by[a].length);
+    let shown = 0;
+    for (const k of keys){
+      if (shown >= renderLimit) break;
+      h += `<div class="jhead"><span>${esc(TA2NAME[k.toLowerCase()] || k)}</span><span>${by[k].length}</span></div>`;
+      for (const it of by[k]) { if (shown++ >= renderLimit) break; h += card(it); }
+    }
+  }
+  if (list.length > renderLimit) h += `<div style="text-align:center;margin:16px"><button class="ghost" id="more">Daha fazla göster (${list.length - renderLimit} kaldı)</button></div>`;
+  $("#list").innerHTML = h;
+  const m = $("#more"); if (m) m.onclick = () => { renderLimit += 200; render(); };
+  setCount(list.length);
+  if (typeof TTS !== "undefined" && TTS.playing) TTS.mark(false);
+}
+function setCount(n){ const s = $("#status").textContent.replace(/ · gösterilen: \d+$/,""); if (items.length) $("#status").textContent = s + (n !== items.length ? ` · gösterilen: ${n}` : ""); }
+
+$("#list").addEventListener("click", async e => {
+  const act = e.target.dataset.act; if (!act) return;
+  const c = e.target.closest(".card"), id = c.dataset.id;
+  if (act === "star"){
+    if (stars[id]) delete stars[id]; else { const it = items.find(x=>x.id===id); stars[id] = it; }
+    store.set("kbb_stars", stars);
+    e.target.classList.toggle("on", !!stars[id]); e.target.textContent = stars[id] ? "★" : "☆";
+    return;
+  }
+  if (act === "listen"){
+    const it = items.find(x=>x.id===id) || stars[id];
+    if (TTS.cur && TTS.cur.id === id && TTS.playing){ TTS.stop(); return; }
+    TTS.playList([it], true);
+    return;
+  }
+  if (act === "abs"){
+    const box = c.querySelector(".abs");
+    if (box.style.display === "block"){ box.style.display = "none"; e.target.textContent = "Özet"; return; }
+    box.style.display = "block"; e.target.textContent = "Özeti gizle";
+    if (absCache[id]){ box.innerHTML = absCache[id].html; return; }
+    box.textContent = "Özet yükleniyor…";
+    try { box.innerHTML = (await getAbstract(id)).html; }
+    catch(err){ box.textContent = "Özet alınamadı: " + err.message; }
+  }
+});
+
+async function getAbstract(id){
+  if (absCache[id]) return absCache[id];
+  const r = await eu(`efetch.fcgi?db=pubmed&retmode=xml&id=${id}`);
+  const x = new DOMParser().parseFromString(await r.text(), "text/xml");
+  const nodes = [...x.querySelectorAll("Abstract > AbstractText")];
+  const parts = nodes.map(n => { const L = n.getAttribute("Label"); return (L ? `<b>${esc(L)}:</b> ` : "") + esc(n.textContent); });
+  const text = nodes.map(n => { const L = n.getAttribute("Label"); return (L ? L.charAt(0) + L.slice(1).toLowerCase() + ". " : "") + n.textContent; }).join(" ");
+  const kw = [...x.querySelectorAll("KeywordList > Keyword")].map(n=>n.textContent).slice(0,10);
+  let h = parts.length ? parts.join("\n\n") : "<i>Bu kayıt için PubMed'de özet bulunmuyor.</i>";
+  if (kw.length) h += `\n\n<b>Anahtar sözcükler:</b> ${esc(kw.join("; "))}`;
+  return absCache[id] = {html: h, text};
+}
+
+// ---------- Sesli okuma (Web Speech API) ----------
+const TTS = {
+  ok: "speechSynthesis" in window,
+  queue: [], idx: 0, playing: false, paused: false, cur: null, gen: 0, single: false,
+  voices(){ return this.ok ? speechSynthesis.getVoices() : []; },
+  pick(lang){
+    const pref = $("#voice") && $("#voice").value;
+    const vs = this.voices();
+    if (lang === "en" && pref){ const v = vs.find(v=>v.voiceURI===pref); if (v) return v; }
+    return vs.find(v=>v.lang.toLowerCase().startsWith(lang)) || null;
+  },
+  chunks(t){ // Android Chrome uzun cümlelerde kesilebilir: cümle bazında böl
+    const out = []; (t.match(/[^.!?;]+[.!?;]*\s*/g) || [t]).forEach(s => {
+      s = s.trim(); if (!s) return;
+      while (s.length > 220){ const k = s.lastIndexOf(",", 220) > 60 ? s.lastIndexOf(",", 220)+1 : 220; out.push(s.slice(0,k)); s = s.slice(k).trim(); }
+      if (s) out.push(s);
+    }); return out;
+  },
+  say(text, lang, gen){
+    return new Promise(res => {
+      if (gen !== this.gen) return res(false);
+      const u = new SpeechSynthesisUtterance(text);
+      const v = this.pick(lang); if (v) u.voice = v;
+      u.lang = v ? v.lang : (lang === "tr" ? "tr-TR" : "en-US");
+      u.rate = +($("#rate").value || 1);
+      u.onend = () => res(gen === this.gen);
+      u.onerror = () => res(gen === this.gen);
+      speechSynthesis.speak(u);
+    });
+  },
+  async sayP(text, lang, gen){ // duraklatma: cümleyi iptal et, devamda aynı cümleden sürdür
+    while (true){
+      const r = await this.say(text, lang, gen);
+      if (!r) return false;
+      if (!this.paused) return true;
+      while (this.paused && gen === this.gen) await sleep(200);
+      if (gen !== this.gen) return false;
+    }
+  },
+  async readItem(it, gen){
+    const mode = $("#ttsMode").value;
+    const head = `${TA2NAME[(it.ta||"").toLowerCase()] || it.jn || it.ta}. ${it.a1 ? it.a1 + (it.n>1?" ve arkadaşları":"") : ""}.`;
+    if (!await this.sayP(head, "tr", gen)) return false;
+    for (const s of this.chunks(it.t)) if (!await this.sayP(s, "en", gen)) return false;
+    if (mode === "full" || this.single){
+      let ab;
+      try { ab = await getAbstract(it.id); } catch(e){ ab = {text:""}; }
+      if (gen !== this.gen) return false;
+      if (!ab.text){ if (!await this.sayP("Özet bulunmuyor.", "tr", gen)) return false; }
+      else for (const s of this.chunks(ab.text)) if (!await this.sayP(s, "en", gen)) return false;
+    }
+    return true;
+  },
+  async playList(list, single=false){
+    if (!this.ok) return toast("Bu tarayıcı sesli okumayı desteklemiyor");
+    if (!list.length) return toast("Okunacak makale yok");
+    this.stop(true);
+    const gen = ++this.gen; this.queue = list; this.idx = 0; this.single = single; this.playing = true; this.paused = false;
+    this.ui();
+    while (this.idx < this.queue.length && gen === this.gen){
+      this.cur = this.queue[this.idx]; this.mark(); this.ui();
+      const done = await this.readItem(this.cur, gen);
+      if (gen !== this.gen) return;
+      if (!done) break;
+      this.idx++;
+      await sleep(450);
+    }
+    if (gen === this.gen) this.stop();
+  },
+  next(){ if (!this.playing) return; const q = this.queue, i = this.idx + 1; if (i >= q.length) return this.stop(); this.playList(q.slice(i), this.single); },
+  prev(){ if (!this.playing) return; const q = this.queue, i = Math.max(0, this.idx - 1); this.playList(q.slice(i), this.single); },
+  toggle(){
+    if (!this.playing) return;
+    if (this.paused){ this.paused = false; } else { this.paused = true; try { speechSynthesis.cancel(); } catch(e){} }
+    this.ui();
+  },
+  stop(silent){ this.gen++; try { speechSynthesis.cancel(); } catch(e){} this.playing = false; this.paused = false; this.cur = null; if (!silent){ this.mark(); this.ui(); } },
+  mark(scroll=true){
+    document.querySelectorAll(".card.reading").forEach(c=>c.classList.remove("reading"));
+    document.querySelectorAll('[data-act="listen"]').forEach(b=>b.textContent="🔊 Dinle");
+    if (!this.cur) return;
+    const c = document.querySelector(`.card[data-id="${this.cur.id}"]`);
+    if (c){ c.classList.add("reading"); const b = c.querySelector('[data-act="listen"]'); if (b) b.textContent = "⏹ Durdur"; if (scroll) c.scrollIntoView({behavior:"smooth", block:"center"}); }
+  },
+  ui(){
+    $("#player").style.display = this.playing ? "flex" : "none";
+    $("#pPause").textContent = this.paused ? "▶" : "⏸";
+    if (this.cur) $("#pInfo").textContent = `${this.idx+1}/${this.queue.length} · ${this.cur.t}`;
+  }
+};
+
+function fillVoices(){
+  const sel = $("#voice"); if (!sel) return;
+  const saved = store.get("kbb_voice", "");
+  const vs = TTS.voices().filter(v => v.lang.toLowerCase().startsWith("en"));
+  sel.innerHTML = `<option value="">Otomatik (İngilizce)</option>` + vs.map(v => `<option value="${esc(v.voiceURI)}" ${v.voiceURI===saved?"selected":""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("");
+}
+if (TTS.ok){ fillVoices(); speechSynthesis.onvoiceschanged = fillVoices; }
+$("#voice").onchange = () => store.set("kbb_voice", $("#voice").value);
+$("#rate").value = store.get("kbb_rate", "1"); $("#rate").onchange = () => store.set("kbb_rate", $("#rate").value);
+$("#ttsMode").value = store.get("kbb_ttsmode", "title"); $("#ttsMode").onchange = () => store.set("kbb_ttsmode", $("#ttsMode").value);
+$("#playAll").onclick = () => {
+  let list = filtered();
+  if ($("#sort").value === "date") list = list.slice().sort((x,y)=> (y.sd||"").localeCompare(x.sd||""));
+  else { const order = {}; list.forEach(it => order[it.ta] = (order[it.ta]||0)+1); list = list.slice().sort((a,b)=> (order[b.ta]-order[a.ta]) || a.ta.localeCompare(b.ta)); }
+  TTS.playList(list);
+};
+$("#pPause").onclick = () => TTS.toggle();
+$("#pNext").onclick = () => TTS.next();
+$("#pPrev").onclick = () => TTS.prev();
+$("#pStop").onclick = () => TTS.stop();
+
+$("#copyStar").onclick = async () => {
+  const arr = Object.values(stars).filter(Boolean);
+  if (!arr.length) return toast("İşaretli makale yok");
+  const txt = arr.map(it => `${it.a1}${it.n>1?" et al.":""} ${it.t} ${it.ta}. ${it.dp}${it.v?`;${it.v}`:""}${it.i?`(${it.i})`:""}${it.pg?`:${it.pg}`:""}.${it.doi?` doi:${it.doi}.`:""} PMID: ${it.id}`).join("\n\n");
+  try { await navigator.clipboard.writeText(txt); toast(`${arr.length} kaynak kopyalandı`); }
+  catch(e){ toast("Kopyalama desteklenmiyor"); }
+};
+
+let qT; $("#q").addEventListener("input", () => { clearTimeout(qT); qT = setTimeout(()=>{ renderLimit=150; render(); }, 200); });
+for (const id of ["#hideMinor","#onlyRev","#onlyStar","#sort"]) $(id).addEventListener("change", () => { renderLimit=150; render(); });
+$("#go").onclick = run;
+
+buildJournalPanel();
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
